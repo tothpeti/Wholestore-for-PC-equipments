@@ -1,0 +1,35 @@
+{% extends "bootstrap/base.html" %}
+{% block title %}
+    Registration
+{% endblock %}
+{% block content %}
+    <div class="container">
+        <div class="alert alert-danger">
+            {% if message %}
+                <p class="message">{{ message | safe }}</p>
+            {% endif %}
+        </div>
+        <form method="post" action="/registration">
+            <div class="form-group col-sm-4">
+                <h3>Name</h3>
+                <input type="text" name="create_name" placeholder="Enter your name"/>
+            </div>
+            <div class="form-group col-sm-4">
+                <h3>Account name</h3>
+                <input type="text" name="create_account_name" placeholder="Enter your account name"/>
+            </div>
+            <div class="form-group col-sm-4">
+                <h3>Password</h3>
+                <input type="text" name="create_password" placeholder="Enter your account name"/>
+            </div>
+            <div class="form-group col-sm-4">
+                <select name="account_type">
+                    <option value="">Select type</option>
+                    <option value="customer">Customer</option>
+                    <option value="supplier">Supplier</option>
+                </select>
+            </div>
+            <input type="submit" value="Submit"/>
+        </form>
+    </div>
+{% endblock %}

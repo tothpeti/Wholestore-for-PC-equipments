@@ -1,0 +1,183 @@
+{% extends "bootstrap/base.html" %}
+
+{% block title %}
+    Supplier
+{% endblock %}
+
+{% block content %}
+
+    <div class="container">
+        <h1>Welcome {{ supplier[0].suppliers_name }}</h1>
+        <a href="/logout">Logout</a>
+        <br><br>
+        <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#addProductModal">Add Product</button>
+        <div class="row">
+            <div class="col-sm-10">
+                <hr>
+                <br>
+                <h1>Products on the market</h1>
+                <br>
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">Product name</th>
+                            <th scope="col">Product type</th>
+                            <th scope="col">Quantity (Unit)</th>
+                            <th scope="col">Price (Ft) / Unit</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in supplier %}
+                            {% if record.products_quantity == 0 %}
+                                <tr style="background-color:red">
+                                    <td>{{ record.products_name }}</td>
+                                    <td>{{ record.products_type }}</td>
+                                    <td>{{ record.products_quantity }}</td>
+                                    <td>{{ record.products_price }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editProductModal{{ loop.index }}">Edit</button>
+                                        <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#removeProductModal{{ loop.index }}">Remove</button>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td>{{ record.products_name }}</td>
+                                    <td>{{ record.products_type }}</td>
+                                    <td>{{ record.products_quantity }}</td>
+                                    <td>{{ record.products_price }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editProductModal{{ loop.index }}">Edit</button>
+                                        <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#removeProductModal{{ loop.index }}">Remove</button>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                            <div class="modal fade" id="editProductModal{{ loop.index }}">
+                                <div class="modal-dialog modal-sm">
+                                    <div class="modal-content">
+
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                            <h3 class="modal-title">Edit product</h3>
+                                        </div>
+
+                                        <form action="/suppliers/edit" method="post">
+                                            <div class="modal-body">
+                                                {% if message %}
+                                                    <div class="alert alert-danger" role="alert">
+                                                        <p class="message">{{ message | safe }}</p>
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-group">
+                                                    <input type="hidden" id="supplier_id" name="supplier_id" value={{ supplier[0].suppliers_id }}>
+                                                    <input type="hidden" id="product_id" name="product_id" value="{{ record.products_id }}">
+                                                    <label>Product name</label>
+                                                    <input type="text" readonly name="product_name" class="form-control" value="{{ record.products_name }}"/>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Product type</label>
+                                                    <input type="text" readonly name="product_type" class="form-control" value="{{ record.products_type }}"/>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Quantity (Unit)</label>
+                                                    <input type="text" name="product_quantity" class="form-control" value="{{record.products_quantity}}"/>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Price (Ft) / Unit</label>
+                                                    <input type="text" name="product_price" class="form-control" value="{{record.products_price}}"/>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="submit" class="btn btn-primary">Submit</button>
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal fade" id="removeProductModal{{ loop.index }}">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                            <h3>Remove - {{ record.products_name }}</h3>
+                                        </div>
+
+                                        <form action="/suppliers/remove" method="post">
+                                            <div class="modal-body">
+                                                {% if message %}
+                                                    <div class="alert alert-danger" role="alert">
+                                                        <p class="message">{{ message | safe }}</p>
+                                                    </div>
+                                                {% endif %}
+                                                <h4>Are you sure?</h4>
+                                                <input type="hidden" id="supplier_id" name="supplier_id" value={{ supplier[0].suppliers_id }}>
+                                                <input type="hidden" id="product_id" name="product_id" value="{{ record.products_id }}">
+                                            <div class="modal-footer">
+                                                <button type="submit" class="btn btn-primary">Yes</button>
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+
+                    </tbody>
+                </table>
+                <br><br>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addProductModal">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h3 class="modal-title">Add new product</h3>
+                </div>
+
+                <form action="/suppliers/new_product" method="post">
+                    <div class="modal-body">
+                        {% if message %}
+                            <div class="alert alert-danger" role="alert">
+                                <p class="message">{{ message | safe }}</p>
+                            </div>
+                        {% endif %}
+                        <div class="form-group">
+                            <input type="hidden" id="supplier_id" name="supplier_id" value={{ supplier[0].suppliers_id }}>
+                            <label>Product name</label>
+                            <input type="text" name="product_name" class="form-control"/>
+                        </div>
+                        <div class="form-group">
+                            <label>Product type</label>
+                            <input type="text" name="product_type" class="form-control"/>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity (Unit)</label>
+                            <input type="text" name="product_quantity" class="form-control"/>
+                        </div>
+                        <div class="form-group">
+                            <label>Price (Ft) / Unit</label>
+                            <input type="text" name="product_price" class="form-control"/>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
