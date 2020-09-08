@@ -225,5 +225,47 @@ def registration():
         return render_template('index.html', message="Please fill the form!")
 
 
+@app.route('/customers/updated', methods=['POST'])
+def update_balance():
+    if request.method == 'POST':
+        new_balance = request.form['balance']
+        custId = request.form['custId']
+        conn = create_db_connection()
+
+        update_balance = conn.cursor().execute(
+            """
+                UPDATE
+                    Customers
+                SET
+                    Customers.balance = Customers.balance + ?
+                WHERE
+                    Customers.id = ?
+            """, [new_balance, custId]
+        )
+        update_balance.close()
+        conn.commit()
+
+        tmp_user_cursor = conn.cursor().execute(
+            """
+                SELECT Customers.id as [customers_id], Customers.first_name as [customers_first_name],
+                    Customers.last_name as [customers_last_name], Customers.balance as [customers_balance],
+                    Customers.userId as [customers_user_id], O.id as [orders_id], O.total_quantity as [orders_total_quantity],
+                    O.total_price as [orders_total_price], O.date as [orders_date], O.productId as [orders_product_id],
+                    O.customerId as [orders_customer_id], P.name as [products_name], S.name as [suppliers_name], S.id as [suppliers_id]
+                FROM Customers
+                    join Users U on Customers.userId = U.id
+                    left join Orders O on Customers.id = O.customerId
+                    left join Products P on O.productId = P.id
+                    left join Suppliers S on P.supplierId = S.id
+                WHERE Customers.id = ?
+            """, [custId]
+        )
+
+        updated_customer = tmp_user_cursor.fetchall()
+        tmp_user_cursor.close()
+        conn.close()
+        return render_template('customers.html', customer=updated_customer, products=get_all_products())
+
+
 if __name__ == '__main__':
     app.run(debug=True)
