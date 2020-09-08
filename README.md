@@ -1,0 +1,2 @@
+# Wholestore for PC equipments
+ 
