@@ -382,5 +382,103 @@ def add_new_product():
         conn.close()
         return render_template('suppliers.html', supplier=updated_supplier)
 
+
+@app.route("/customers/purchase", methods=['POST'])
+def buy_product():
+    if request.method == 'POST':
+        cust_id = request.form['customer_id']
+        sup_id = request.form['supplier_id']
+        prod_id = request.form['product_id']
+        prod_name = request.form['product_name']
+        prod_type = request.form['product_type']
+        original_prod_quantity = request.form['org_prod_quantity']
+        cust_balance = request.form['customer_balance']
+        prod_price = request.form['product_price']
+        prod_total_quantity = request.form['product_quantity']
+        total_price = int(float(prod_price)) * int(prod_total_quantity)
+
+        conn = create_db_connection()
+        tmp_customer = conn.cursor().execute(
+            """
+                SELECT Customers.id as [customers_id], Customers.first_name as [customers_first_name],
+                    Customers.last_name as [customers_last_name], Customers.balance as [customers_balance],
+                    Customers.userId as [customers_user_id], O.id as [orders_id], O.total_quantity as [orders_total_quantity],
+                    O.total_price as [orders_total_price], O.date as [orders_date], O.productId as [orders_product_id],
+                    O.customerId as [orders_customer_id], P.name as [products_name], S.name as [suppliers_name], S.id as [suppliers_id]
+                FROM Customers
+                    join Users U on Customers.userId = U.id
+                    left join Orders O on Customers.id = O.customerId
+                    left join Products P on O.productId = P.id
+                    left join Suppliers S on P.supplierId = S.id
+                WHERE Customers.id = ?       
+            """, [cust_id]
+        )
+
+        org_customer = tmp_customer.fetchall()
+        tmp_customer.close()
+        if (int(float(cust_balance)) < total_price) or (int(float(cust_balance)) == 0):
+            return render_template("customers.html", customer=org_customer, products = get_all_products(),
+                                   message="You have not enough money.")
+
+        if (int(original_prod_quantity) < int(prod_total_quantity)) or (int(original_prod_quantity) - int(prod_total_quantity) < 0):
+            return render_template("customers.html", customer=org_customer, products=get_all_products(),
+                                   message="There are not enough units from the product.")
+
+        # If everything is OK, then ...
+        tmp_insert = conn.cursor().execute(
+            """
+            INSERT INTO Orders
+            VALUES (?, ?, GETDATE(), ?, ?, ?)
+            """, [prod_total_quantity, total_price, prod_id, cust_id, 0]
+        )
+        tmp_insert.close()
+        conn.commit()
+
+        tmp_update_cust = conn.cursor().execute(
+            """
+            UPDATE Customers
+            SET
+                Customers.balance = Customers.balance - ?
+            WHERE
+                  Customers.id = ?
+            """, [total_price, cust_id]
+        )
+        tmp_update_cust.close()
+        conn.commit()
+
+        tmp_update_prod = conn.cursor().execute(
+            """
+            UPDATE Products
+            SET
+                Products.quantity = Products.quantity - ?
+            WHERE
+                  Products.id = ?
+            """, [prod_total_quantity, prod_id]
+        )
+        tmp_update_prod.close()
+        conn.commit()
+
+        updated_customer_cursor = conn.cursor().execute(
+            """
+                SELECT Customers.id as [customers_id], Customers.first_name as [customers_first_name],
+                    Customers.last_name as [customers_last_name], Customers.balance as [customers_balance],
+                    Customers.userId as [customers_user_id], O.id as [orders_id], O.total_quantity as [orders_total_quantity],
+                    O.total_price as [orders_total_price], O.date as [orders_date], O.productId as [orders_product_id],
+                    O.customerId as [orders_customer_id], P.name as [products_name], S.name as [suppliers_name], S.id as [suppliers_id]
+                FROM Customers
+                    join Users U on Customers.userId = U.id
+                    left join Orders O on Customers.id = O.customerId
+                    left join Products P on O.productId = P.id
+                    left join Suppliers S on P.supplierId = S.id
+                WHERE Customers.id = ?       
+            """, [cust_id]
+        )
+        updated_customer = updated_customer_cursor.fetchall()
+        updated_customer_cursor.close()
+        conn.close()
+        return render_template("customers.html", customer=updated_customer, products=get_all_products())
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
