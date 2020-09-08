@@ -267,5 +267,39 @@ def update_balance():
         return render_template('customers.html', customer=updated_customer, products=get_all_products())
 
 
+@app.route('/suppliers/remove', methods=['POST'])
+def remove_product():
+    if request.method == 'POST':
+        product_id = request.form['product_id']
+        supplier_id = request.form['supplier_id']
+
+        conn = create_db_connection()
+        tmp_delete_product_cursor = conn.cursor().execute(
+            """
+            DELETE FROM Products WHERE Products.id = ?
+            """, [product_id]
+        )
+
+        tmp_delete_product_cursor.close()
+        conn.commit()
+
+        tmp_supplier = conn.cursor().execute(
+            """
+            SELECT Suppliers.id as [suppliers_id], Suppliers.name as [suppliers_name],
+                Suppliers.userId as [suppliers_user_id],
+                P.id as [products_id], P.name as [products_name], P.type as [products_type],
+                P.quantity as [products_quantity], p.price as [products_price], P.supplierId as [products_supplier_id]
+            FROM Suppliers
+                Join Users U on Suppliers.userId = U.id
+                left join Products P on Suppliers.id = P.supplierId
+            WHERE Suppliers.id = ?
+            """, [supplier_id]
+        )
+        updated_supplier = tmp_supplier.fetchall()
+        tmp_supplier.close()
+        conn.close()
+        return render_template('suppliers.html', supplier=updated_supplier)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
