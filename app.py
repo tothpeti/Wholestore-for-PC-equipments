@@ -301,5 +301,50 @@ def remove_product():
         return render_template('suppliers.html', supplier=updated_supplier)
 
 
+@app.route('/suppliers/edit', methods=['POST'])
+def edit_product():
+    if request.method == 'POST':
+        prod_id = request.form['product_id']
+        sup_id = request.form['supplier_id']
+        new_product_name = request.form.get('product_name', None)
+        new_product_type = request.form.get('product_type', None)
+        new_product_quantity = request.form.get('product_quantity', None)
+        new_product_price = request.form.get('product_price', None)
+
+        conn = create_db_connection()
+        tmp_update_product = conn.cursor().execute(
+            """
+                UPDATE Products
+                SET 
+                    Products.name = ?,
+                    Products.type = ?,
+                    Products.quantity = ?,
+                    Products.price = ?,
+                    Products.supplierId = ? 
+                WHERE
+                      Products.id = ?
+            """, [new_product_name, new_product_type, new_product_quantity, new_product_price, sup_id, prod_id]
+        )
+        tmp_update_product.close()
+        conn.commit()
+
+        tmp_edited_supplier = conn.cursor().execute(
+            """
+            SELECT Suppliers.id as [suppliers_id], Suppliers.name as [suppliers_name],
+                Suppliers.userId as [suppliers_user_id],
+                P.id as [products_id], P.name as [products_name], P.type as [products_type],
+                P.quantity as [products_quantity], p.price as [products_price], P.supplierId as [products_supplier_id]
+            FROM Suppliers
+                Join Users U on Suppliers.userId = U.id
+                left join Products P on Suppliers.id = P.supplierId
+            WHERE Suppliers.id = ?
+            """, [sup_id]
+        )
+        updated_supplier = tmp_edited_supplier.fetchall()
+        tmp_edited_supplier.close()
+        conn.close()
+        return render_template('suppliers.html', supplier=updated_supplier)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
