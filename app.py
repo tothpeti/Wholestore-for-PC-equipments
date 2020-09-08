@@ -479,6 +479,22 @@ def buy_product():
         return render_template("customers.html", customer=updated_customer, products=get_all_products())
 
 
+def get_all_products():
+    conn = create_db_connection()
+    all_products_cursor = conn.cursor().execute(
+        """
+        select Products.id as [products_id], Products.name as [products_name], Products.type as [products_type], 
+               Products.quantity as [products_quantity], Products.price as [products_price], 
+               Products.supplierId as [products_supplier_id], S.name as [suppliers_name]
+        from Products
+            join Suppliers S on Products.supplierId = S.id
+        """
+    )
+    all_products = all_products_cursor.fetchall()
+    all_products_cursor.close()
+    conn.close()
+    return all_products
+
 
 if __name__ == '__main__':
     app.run(debug=True)
